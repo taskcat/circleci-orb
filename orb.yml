@@ -1,0 +1,78 @@
+version: 2.1
+
+description: Installs taskcat cli
+name: taskcat
+
+executors:
+  default:
+    description: |
+      Install taskcat cli for use with testing and deploying cloudformation (Built by the AWS QuickStart team) http://taskcat.io
+
+    parameters:
+      python-version:
+        type: string
+        default: "3.6"
+
+    docker:
+      - image: circleci/python:latest
+
+commands:
+  install:
+    description: |
+      Install taskcat via pip
+
+    steps:
+      - run: echo "starting taskcat"
+      - run:
+          name: Install latest taskcat
+          command: |
+                    export PIP=$(which pip3 | head -1)
+                    if [[ -n $PIP ]]; then
+                        if which sudo > /dev/null; then
+                           sudo $PIP install taskcat --upgrade
+                        else
+                             # This installs taskcat cli to ~/.local/bin. Make sure that ~/.local/bin is in your $PATH.
+                           $PIP install taskcat --upgrade --user
+                        fi
+                    else
+                        echo "Unable to install taskcat. no pip3 found."
+                        exit 1
+                    fi
+                    if [ -d "~/.aws" ]; then
+                      echo "Found aws config directory"
+                    else
+                      echo "Please configure awscli"
+                    fi
+
+  configure:
+    description: |
+                 taskcat.yml (requires aws-cli to be configured)
+
+    parameters:
+      taskcat-yml-path:
+        description: path to taskcat configuration file (i.e. gitrepo/ci/taskcat.yml)
+        type: string
+        default: "ci/taskcat.yml"
+
+      github-repo-url:
+        description: github repo path which contain quickstart/cloudformation project
+        type: string
+        default: "https://github.com/aws-quickstart/quickstart-sample-project"
+
+      github-repo-name:
+        description: name of github repo
+        type: string
+        default: "quickstart-sample-project"
+
+    steps:
+      - run:
+          name: pull down the source (init release repo much be public)
+          command: |
+            git clone << parameters.github-repo-url >> --recursive 
+
+      - run:
+          name: Start taskcat run
+          command: |
+            export TERM=xterm-256color
+            taskcat -c  << parameters.github-repo-name >>/<< parameters.taskcat-yml-path >>
+
