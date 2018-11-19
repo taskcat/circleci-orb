@@ -1,0 +1,19 @@
+version: 2.1
+
+orbs:
+  taskcat: taskcat/taskcat-orb@dev:first
+
+jobs:
+  taskcat:
+    executor: taskcat/default
+    steps:
+      - checkout
+      - taskcat/install
+      - taskcat/configure:
+          github-repo-name: "quickstart-sample-project"
+
+workflows:
+  version: 2
+  taskcat:
+    jobs:
+      - taskcat
